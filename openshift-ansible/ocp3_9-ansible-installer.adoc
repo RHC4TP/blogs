@@ -169,9 +169,9 @@ openshift_disable_check=memory_availability,disk_availability
 
 [NOTE]
 ====
-You can further condense the installation down to 2 hosts by eliminating the infrastructure node (denoted by `region: infra` in the `hosts.example` file).
+You can further condense the installation down to 2 hosts by eliminating the application node, retaining only the master and infrastructure nodes.
 
-Be aware that this will cause the Template Broker deployment to fail, which happens to be the very last phase of the install.
+In this case, the additional label `'node-role.kubernetes.io/compute': 'true'` must be added to the infrastructure node (denoted by the label `'region': 'infra'` in the `hosts.example` file), or application pods will not launch due to a mismatched node selector.
 ====
 
 There is one final tweak that must be made to the Ansible hosts file before copying it into place. Scroll down into the `[OSEv3:vars]` section and uncomment the following line to enable htpasswd authentication as shown: 
