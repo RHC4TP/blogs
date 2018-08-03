@@ -96,7 +96,7 @@ master1.openshift.local ansible_connection=local
 
 [nodes]
 master1.openshift.local ansible_connection=local openshift_node_group_name='node-config-master' <2>
-node1.openshift.local openshift_node_group_name='node-config-infra' openshift_node_labels="{'region': 'infra', 'zone': 'default', 'node-role.kubernetes.io/compute': 'true'}" <3>
+node1.openshift.local openshift_node_group_name='node-config-infra' <3>
 
 [nfs]
 master1.openshift.local ansible_connection=local <4>
@@ -150,8 +150,7 @@ openshift_release=v3.10 <8>
 ----
 <1> `master1.openshift.local` is configured as a `[master]`, `[node]`, `[etcd]` and `[nfs]` host, while `ansible_connection=local` is set since we will install from this host.
 <2> Starting with OpenShift 3.10, `openshift_node_group_name` must be defined for all nodes. The default configmap values are `node-config-master`, `node-config-infra` and `node-config-compute`.
-<3> We've condensed the node count down to only 2 nodes, so the additional label `'node-role.kubernetes.io/compute': 'true'` must be added to the infrastructure node (denoted by the label `'region': 'infra'`), or application pods will not launch due to a mismatched node selector.
-<4> As in the original example, we'll continue to use the master host to serve NFS for persistent volumes, since this is a demo/dev/test cluster.
+<3> <4> As in the original example, we'll continue to use the master host to serve NFS for persistent volumes, since this is a demo/dev/test cluster.
 <5> A load balancer is not utilized, so the `[lb]` group was removed, as well as the corresponding entries from `[OSEv3:children]`.
 <6> If you don't use the `root` account for passwordless access over ssh, then set `ansible_user` to the desired username (also requires passwordless sudo permissions).
 <7> To install OpenShift Container Platform (and not OpenShift Origin/OKD), you must comment out `openshift_deployment_type=origin` and uncomment `openshift_deployment_type=openshift-enterprise`.
@@ -187,10 +186,16 @@ The Ansible hosts file is now in place and ready for use. The next command will 
 
 Now, crack open a cold beverage (or go grab some coffee if you prefer) and wait for the installation to complete (roughly 30 minutes on the hardware described). Assuming that each host was properly https://docs.openshift.com/container-platform/3.10/install_config/install/host_preparation.html[prepared] and meets the https://docs.openshift.com/container-platform/3.10/install_config/install/prerequisites.html[minimum requirements], then the installation should complete without failure.
 
-Don't forget to create a user account after the installation completes:
+After the installation completes, you can create an account using `htpasswd`:
 
 ----
 # htpasswd /etc/origin/master/htpasswd <username>
 ----
 
-Hopefully, you've found this post to be a useful aide in migrating from the former Quick Installation method to using Ansible proper. Stay tuned for upcoming blogs from the Red Hat Connect team.
+Once more step is required since we've condensed the node count down to only 2 hosts. The node (which inherited the infra role) must be labeled as a compute node, or application pods will fail to launch due to a mismatched node selector:
+
+----
+# oc label nodes node1.openshift.local node-role.kubernetes.io/compute=true
+----
+
+...and that's it! Now you can setup https://docs.openshift.com/container-platform/3.10/install_config/persistent_storage/persistent_storage_nfs.html[persistent storage] by utilizing the NFS services that were setup on the master host during the install (which isn't covered here). Hopefully, you've found this post to be a useful aide in migrating from the former Quick Installation method, or perhaps just as a scaled-down deployment of OpenShift. Stay tuned for upcoming blogs from the Red Hat Connect team.
