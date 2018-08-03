@@ -10,7 +10,7 @@ You can obtain the example ansible hosts file being used for OpenShift https://r
 # cp /usr/share/doc/openshift-ansible-docs*/docs/example-inventories/hosts.example ./
 ----
 
-Below is a snippet from the uppermost section of the `hosts.example` file as it gets shipped in OCP 3.9, along with notations describing key aspects of the file:
+Below is a snippet from the uppermost section of the `hosts.example` file as it gets shipped in OCP 3.10, along with notations describing key aspects of the file:
 
 ----
 [masters] <1>
