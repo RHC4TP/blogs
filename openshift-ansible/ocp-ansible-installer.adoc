@@ -178,7 +178,13 @@ Once you've finished editing the `hosts.example` file, you can copy it into plac
 # cp hosts.example /etc/ansible/hosts
 ----
 
-The Ansible hosts file is now in place and ready for use. The next command will launch Ansible, and install OpenShift 3.10 using the `openshift-ansible` playbook set:
+Now that the hosts file is configured in the default location, you are ready to launch Ansible. The `openshift-ansible` package provides a set of playbooks for installing, upgrading and configuring OpenShift. The `prerequisites.yml` playbook is the first phase of the installation, which handles configuration of the container runtime and host services such as firewall and ntp:
+
+----
+# ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
+----
+
+Once the above playbook completes, install OpenShift 3.10 using the `deploy-cluster.yml` playbook:
 
 ----
 # ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
@@ -192,7 +198,7 @@ After the installation completes, you can create an account using `htpasswd`:
 # htpasswd /etc/origin/master/htpasswd <username>
 ----
 
-Once more step is required since we've condensed the node count down to only 2 hosts. The node (which inherited the infra role) must be labeled as a compute node, or application pods will fail to launch due to a mismatched node selector:
+One more step is required since we've condensed the node count down to only 2 hosts. The node (which inherited the infra role) must be labeled as a compute node, or application pods will fail to launch due to a mismatched node selector:
 
 ----
 # oc label nodes node1.openshift.local node-role.kubernetes.io/compute=true
