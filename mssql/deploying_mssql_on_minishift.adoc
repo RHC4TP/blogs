@@ -1,0 +1,105 @@
+== Deploying Microsoft SQL Server onto Minishift
+Microsoft has recently published SQL Server into the Red Hat Container Catalog as a certified container image. This is a great achievement for us as the Red Hat Ecosystem team has been working with Microsoft for over a year to make this happen. In light of this occasion, I'd like to cover deploying Microsoft SQL Server on Minishift for testing and evaluation. You'll need Minishift, the included `oc` utility, and the SQL Server command line tools setup on your local machine. If you don't already have Minishift, the Red Hat Ecosystem team has assembled a quick start guide at https://github.com/RHC4TP/operators/blob/master/docs/minishift_quickstart.adoc which will help you get it setup. The command line tools for SQL Server can be installed using the documentation provided at https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-2017.
+
+Begin by launching the Minishift cluster, where you should then be automtically authenticated as `developer`.
+
+ minishift start
+
+Ideally, you'll need a new namespace for deploying SQL Server into (or project as it is called in OpenShift nomenclature):
+ 
+ oc new-project my-mssql
+
+Next, create the imagestream in the new project/namespace using the specific version tag for the remote registry (the `latest` tag won't work in this case):
+
+ oc import-image mssql-rhel-server --from=mcr.microsoft.com/mssql/rhel/server:vNext-CTP2.0 --confirm
+
+For additional clarity, the above command uses the following format:
+
+ oc import-image <namespace>/<arbitrary-image-stream-name> --from=<registry>/<repository>/<image>:<tag> --confirm
+
+You'll also need the `anyuid` security context constraint assigned to the `default` service account in the project you've created:
+
+ oc adm policy add-scc-to-user anyuid -z default
+
+To be able to deploy the image, you'll need to create a `DeploymentConfig` object in a text editor, referencing the created `ImageStream` named `mssql-rhel-server`, eg:
+
+----
+kind: "DeploymentConfig"
+apiVersion: "v1"
+metadata:
+  name: "mssql-server-test" <1>
+spec:
+  template: 
+    metadata:
+      labels:
+        name: "mssql-server-test" <1>
+    spec:
+      containers:
+        - name: "mssql-rhel-server" <2>
+          image: "mssql-rhel-server:latest" <3> 
+          env:
+            - name: ACCEPT_EULA <4>
+              value: "Y"
+            - name: SA_PASSWORD <5>
+              value: "s3curePasswordStr!ng"
+            - name: MSSQL_PID <6>
+              value: "Developer"
+          ports:
+            - containerPort: 1433 <7>
+              protocol: "TCP"
+  replicas: 1 
+  triggers:
+    - type: "ConfigChange" 
+    - type: "ImageChange" 
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - "mssql-rhel-server" <2>
+        from:
+          kind: "ImageStreamTag"
+          name: "mssql-rhel-server:latest" <8>
+  strategy: 
+    type: "Rolling"
+  paused: false 
+  revisionHistoryLimit: 2 
+  minReadySeconds: 0 
+----
+<1> Arbitrary name of the deployment being created
+<2> Name to be assigned to the container(s) being deployed
+<3> Image name and tag of the backing container image (ignored when using `ImageStream`)
+<4> Setting the `ACCEPT_EULA` environment variable to `Y` means that you're accepting the following EULA: https://go.microsoft.com/fwlink/?linkid=857698
+<5> The `SA_PASSWORD` environment variable contains the password to the `sa` admin account, of at least 8 characters and contains three of these four groups: uppercase letters, lowercase letters, numbers and non-alphanumeric symbols
+<6> The `MSSQL_PID` environment variable is the Product ID or Edition that the container will run with. Acceptable values are `Developer` (default), `Express`, `Standard`, `Enterprise`, `EnterpriseCore` or `<valid product id>`
+<7> TCP port being exposed, where we set the SQL Server default of `1433`
+<8> `ImageStream` name and associated tag
+
+Save the file as `mssql-dc.yaml` or something similar.
+
+In the above `DeploymentConfig`, the image stream name of `mssql-rhel-server` must match the image stream name that was created. The `latest` tag will still work with the image stream, despite the upstream image not supporting this. This is due to the `latest` tag of the image stream getting set to the sha256 hash of the `vNext-CTP2.0` tagged image. The contiainer name under the `triggers` section must also match the container name being deployed. The rest is arbitrary, including the `image:` defined under the `containers:` section as this is essentially ignored in favor of the referenced `ImageStream`.
+
+You can kick off the deployment by issuing the following command:
+
+ oc create -f mssql-dc.yaml
+
+You should then see the pod (we declared only 1 pod replica in the `DeploymentConfig`) being deployed into the `my-mssql` namespace:
+
+ oc get pods
+
+Expose the SQL Server instance using a `NodePort` service (required when using Minishift), which is declared like so:
+
+ oc expose dc mssql-server-test --type=LoadBalancer --name=mssql-server-ingress
+
+To obtain the dynamically-allocated `NodePort` of SQL server instance, run the following command which should give you the value of the `NodePort` (it is a high-range port over 30000):
+
+ oc export svc mssql-server-ingress
+
+You can now connect to the SQL Server instance using the IP of your Minishift instance and the discovered `NodePort` (shown as `32316` below). In order to connect, you'll need the SQL Server command-line tools, and your password for the `sa` account that was defined in `mssql-dc.yaml` earlier:
+
+ /opt/mssql-tools/bin/sqlcmd -S $(minishift ip),32316 -U sa -P 's3curePasswordStr!ng'
+
+You should now be at a `1>` prompt, where you can enter T-SQL statements as you otherwise would. You can test using the following example:
+
+ 1> SELECT @@SERVERNAME
+ 2> GO
+
+Stay tuned for more content from the Red Hat Ecosystem team. In the next installment, we'll cover setting up a container instance of SQL Server in Azure.
