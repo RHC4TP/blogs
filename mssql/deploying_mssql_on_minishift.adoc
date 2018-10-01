@@ -21,7 +21,7 @@ You'll also need the `anyuid` security context constraint assigned to the `defau
 
  oc adm policy add-scc-to-user anyuid -z default
 
-To be able to deploy the image, you'll need to create a `DeploymentConfig` object in a text editor, referencing the created `ImageStream` named `mssql-rhel-server`, eg:
+To be able to deploy the image, you'll need to create a `DeploymentConfig` object in a text editor, referencing the created `ImageStream` named `mssql-rhel-server`. You can copy/paste in the code below, omitting the numeric callouts as needed:
 
 ----
 kind: "DeploymentConfig"
@@ -102,4 +102,4 @@ You should now be at a `1>` prompt, where you can enter T-SQL statements as you 
  1> SELECT @@SERVERNAME
  2> GO
 
-Stay tuned for more content from the Red Hat Ecosystem team. In the next installment, we'll cover setting up a container instance of SQL Server in Azure.
+Stay tuned for more content from the Red Hat Ecosystem team. In the next installment, we'll cover setting up a container instance of SQL Server in the cloud.
