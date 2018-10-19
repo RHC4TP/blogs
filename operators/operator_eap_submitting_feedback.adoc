@@ -1,0 +1,20 @@
+== Submitting Feedback for the Operator Early Adopters Program
+The https://connect.redhat.com/blog[Operators EAP at Red Hat Connect] is kicking off, and we are seeking honest feedback from participating partners. This includes feedback on educational material such as webinars and quick start guides, as well as featured technologies such as the https://github.com/operator-framework[Operator Framework], which encompasses the https://github.com/operator-framework/operator-sdk[Operator SDK], https://github.com/operator-framework/helm-app-operator-kit[Helm App Operator Kit], and the https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager] (included in OpenShift Container Platform 3.11). We're also requesting partner participation in the form of reporting bugs and requesting useful features for any of the mentioned content and tools.
+
+As an overview, most bugs or feature requests will get filed with the relevant projects on https://github.com[GitHub], with feedback for webinars provided via https://connect.redhat.com[Red Hat Connect]. This post will provide a general overview of the process, and also act as an index where you can quickly reference these projects and open an issue on GitHub.
+
+=== Links to Github Issues by Project
+* https://github.com/operator-framework/operator-sdk/issues[Operator SDK]
+* https://github.com/operator-framework/helm-app-operator-kit/issues[Helm App Operator Kit]
+* https://github.com/operator-framework/operator-lifecycle-manager/issues[Operator Lifecycle Manager]
+* https://github.com/RHC4TP/operators/issues[Operator EAP Quickstart Guides]
+
+To open an issue, click on any of the links for the above projects, which will take you to the Issues page for that project. Check any open issues for that project to avoid opening a duplicate issue. Once you're fairly certain that the particular bug or feature request hasn't been opened, click *New issue*:
+
+image::../../assets/Screenshot_2018-10-16_10-27-25.png[]
+
+Enter a brief summary of the bug or feature request, and then describe it in detail in the box below. Include any code or log snippets related to the bug, or a detailed example in the case of a feature request. You'll see in the above screenshot that we've submitted a request to add Helm installation to the quick start guide for Helm charts (don't worry, this is already covered in the guide). Once you've finished desribing the issue in detail, click *Submit new issue*:
+
+image::../../assets/Screenshot_2018-10-19_14-29-40.png[]
+
+Submitting feedback for any GitHub hosted project is as simple as that. If you are a developer, the Operator Framework projects will review any pull requests that you submit for possible merging. There is one final thing to mention: feedback for any other content (videos, podcasts and the like) produced by Red Hat Connect can be submitted using the Google Form located at https://goo.gl/forms/KG6BQTCKk4AI0O6C2.
