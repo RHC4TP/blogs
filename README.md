@@ -1,3 +1,2 @@
-# RHC4TP Blogs - Technical Alignment and Strategy
-This is a central repository for all TAS team blogs.
-
+## Red Hat Connect for Technology Partners
+This is a source repository for blog content posted to https://connect.redhat.com/blog.
