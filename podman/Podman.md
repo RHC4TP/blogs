@@ -1,5 +1,5 @@
 ## What is Podman?
-Podman is a tool designed for managing containers. It does not require a daemon to run containers, and non-root users can benefit from this tool. No more having to give your developers access to root privileges. Podman implements almost all the Docker CLI commands, therefore there are no new commands to learn as well.
+Podman is a tool designed for managing containers. It does not require a daemon to run containers, and non-root users can benefit from this tool. No more having to give your developers access to root privileges. Podman implements almost all the Docker CLI commands, therefore there are no new commands to learn as well. You can still use your existing Dockerfiles. 
 
 ## Installing Podman  
 To install podman run: 
@@ -22,13 +22,6 @@ Running a continaer:
 
 `$ podman run -d -it -t <image_id> /bin/bash` 
 
-See current images:
-
-`$ podman images` 
-
-See current containers running: 
-
-`$ podman ps -a` 
 
 ## Certifying your Container with Red Hat Connect
 You will need to login to the [Red Hat Connect Portal](https://connect.redhat.com/). Go to your projects page and go to the Upload your Image tab. You will need to login first before tagging and pushing your image. You can change the *docker* command to *podman*. Your Registry Key is the password for your login.
