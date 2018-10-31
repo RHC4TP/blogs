@@ -1,5 +1,8 @@
+With the release of Red Hat Enterprise Linux 7.6 (link: http://www.eweek.com/enterprise-apps/red-hat-enterprise-linux-7.6-launches-with-improved-security) , there are several new features being introduced. Once of them, which we think is really cool and helps get our enviorment set up quicker, is a new way to build container image called podman.
+
+
 ## What is Podman?
-Podman is a tool designed for managing containers. It does not require a daemon to run containers, and non-root users can benefit from this tool. No more having to give your developers access to root privileges. Podman implements almost all the Docker CLI commands, therefore there are no new commands to learn. You can still use your existing Dockerfiles. 
+Podman is a tool designed for managing containers. It does not require a daemon to run containers, and non-root users can benefit from this tool. Which means no more having to give your developers access to root privileges. Podman also implements almost all the Docker CLI commands, therefore there are no new commands to learn. You can still use your existing Dockerfiles. Does using a new tool to get the same job done get much easier than that? 
 
 ## Installing Podman  
 To install podman run: 
@@ -36,4 +39,7 @@ Push your image. *Please note this is an example, you will need to copy the comm
 
 `$ docker push scan.connect.redhat.com/ospid-12345678-9100-abcd-efg-hijklmnopqr/[image-name]:[tag]`
 
- 
+Other thing you can do with Podman are:
+
+
+For more information about what podman can do go to here (link)
