@@ -1,5 +1,5 @@
 ## What is Podman?
-Podman is a tool designed for managing containers. It does not require a daemon to run containers, and non-root users can benefit from this tool. No more having to give your developers access to root privileges. Podman implements almost all the Docker CLI commands, therefore there are no new commands to learn as well. You can still use your existing Dockerfiles. 
+Podman is a tool designed for managing containers. It does not require a daemon to run containers, and non-root users can benefit from this tool. No more having to give your developers access to root privileges. Podman implements almost all the Docker CLI commands, therefore there are no new commands to learn. You can still use your existing Dockerfiles. 
 
 ## Installing Podman  
 To install podman run: 
