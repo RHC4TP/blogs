@@ -18,7 +18,7 @@ Example building an image named happy in current directory:
 
 `$ podman build -t happy .`
 
-Running a continaer: 
+Running a contianer: 
 
 `$ podman run -d -it -t <image_id> /bin/bash` 
 
