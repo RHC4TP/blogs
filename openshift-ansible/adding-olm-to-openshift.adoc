@@ -26,4 +26,6 @@ When the playbook completes, there will be a new *Operators* menu item in the Op
 
 image::../../assets/olm_console_menu.png[]
 
+{empty} +
+
 You're now ready to begin testing operators using the new Operator Lifecycle Manager. We'll follow up with another blog covering this topic soon, but in the meantime you can follow the official https://docs.openshift.com/container-platform/3.11/install_config/installing-operator-framework.html#launching-your-first-operator_installing-operator-framework[OpenShift 3.11 documentation] to launch your first operator.

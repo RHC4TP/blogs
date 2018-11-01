@@ -1,0 +1,159 @@
+== Creating a Cluster Service Version for your Operator
+The Operator Lifecycle Manager (OLM) launched with OpenShift 3.11 as a Technology Preview. If you happen to have an operator that you would like to manage using OLM, than you'll need to create a Cluster Service Version (CSV) yaml file for the operator. A Cluster Service Version is the metadata that accompanies an operator container image. This data is used to populate the OLM user interface with a logo, description, and version info. The CSV will also contain the Kubernetes/OpenShift manifests required to deploy the operator. In this post, we'll go over the basic syntax of the Cluster Service Version (csv.yaml) file, and the info that it contains. To continue, it is expected that you have the following resources available:
+* An OpenShift cluster with the OLM feature installed
+* An exisiting operator image that you wish to use
+* A `deployment.yaml` (or `operator.yaml`) file to deploy the operator image
+* An `rbac.yaml` file which grants the required cluster permissions to the operator
+* A `crd.yaml` (Custom Resource Definition) file associated with the operator
+
+If you don't have an operator for your application, you can still follow along. See the list of https://github.com/operator-frameword/awesome-operators[Awesome Operators] on GitHub. We've selected the https://github.com/solo-io/envoy-operator/tree/master/deploy[envoy-operator] from this list to use in our example, which doesn't have an existing CSV. Rather than explaining each section in detail, we've provided a custom-written CSV with callouts explaining key fields:
+
+----
+apiVersion: operators.coreos.com/v1alpha1 <1>
+kind: ClusterServiceVersion
+metadata:
+  name: envoy-operator.v1.0.0.beta <2>
+  namespace: placeholder
+  annotations: <3>
+    alm-examples: '[{"apiVersion":"envoy.solo.io/v1alpha1","kind":"Envoy","metadata":{"name":"my-cluster"},"spec":{"adsServer":"ads-service.default.svc.cluster.local","adsPort":8081,"clusterIdTemplate":"ingress","nodeIdTemplate":"ingress-{{.PodName}}","deployment":{"replicas":3}}}]'
+spec:
+  displayName: Envoy Operator <4>
+  description: |
+        This an example block description for the Envoy Operator
+  keywords: ['envoy', 'proxies', 'gloo']
+  version: 1.0.0-Beta
+  maturity: beta
+  maintainers:
+  - name: Envoy
+    email: envoy@example.com
+  provider:
+    name: Envoy
+  links:
+  - name: Product Page
+    url: https://github.com/solo-io/envoy-operator
+  - name: Documentation
+    url: https://github.com/solo-io/envoy-operator
+  icon: <5>
+  - base64data: <base64_encoded_image>
+    mediatype: image/png
+  install: <6>
+    strategy: deployment
+    spec:
+      permissions: <7>
+      - serviceAccountName: default
+        rules:
+        - apiGroups:
+          - envoy.solo.io
+          resources:
+          - "*"
+          verbs:
+          - "*"
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - "*"
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - "*"
+      deployments:
+      - name: envoy-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: envoy-operator
+          template:
+            metadata:
+              labels:
+                name: envoy-operator
+            spec:
+              containers:
+                - name: envoy-operator
+                  image: soloio/envoy-operator:v0.0.1
+                  command:
+                  - envoy-operator
+                  args:
+                  - "-n"
+                  - "$(POD_NAMESPACE)"
+                  imagePullPolicy: IfNotPresent
+                  env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+  customresourcedefinitions: <9>
+    owned: <10>
+    - displayName: Envoy <11>
+      group: envoy.solo.io
+      version: v1alpha1
+      kind: Envoy
+      name: envoys.envoy.solo.io
+      resources: <12>
+       - kind: Service
+          name: ''
+          version: v1
+        - kind: Deployment 
+          name: ''
+          version: v1
+        - kind: Pod
+          name: ''
+          version: v1
+        - kind: ConfigMap
+          name: ''
+          version: v1
+      specDescriptors: <13>
+        - description: xDS Server to be used by Envoy
+          displayName: xDS Server
+          path: adsServer
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:selector:core:v1:ConfigMap'
+        - description: Port used by the xDS Server 
+          displayName: xDS Port
+          path: adsPort
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:selector:core:v1:ConfigMap'
+        - description: Number of Envoy pod replicas 
+          displayName: Replica Count
+          path: 'deployment:replicas'
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:selector:apps:v1:Deployment'
+      statusDescriptors: <14>
+        - description: The status of each of the Pods running as an Envoy proxy
+          displayName: Pod Status
+          path: pods
+          x-descriptors:
+            - 'urn:alm:descriptor:com.tectonic.ui:podStatuses'
+      description: >- <15>
+        The Envoy operator transforms the Envoy CR spec into a Deployment and a ConfigMap that contains Envoy's static config file.
+----
+<1> The TypeMeta or GVK (Group, Version, Kind) for the CSV will always be the same for every operator
+<2> The name of the operator
+<3> The `alm-examples` section under `annotations` contains json data used to generate a pre-filled CR spec that the user can then modify
+<4> This section contains typical metadata such as long description, version, maintainer, links to project resources and so forth
+<5> An icon image can be pasted here as base64 encoded raw data
+<6> The `install` section lists all resources required to deploy the operator
+<7> The `permissions` section lists the RBAC rules and service account name (typically defined in `rbac.yaml`)
+<8> The `deployments` section contains the contents of the deployment file (usually `operator.yaml`) used to deploy the operator
+<9> `customresourcedefinitions` lists all of the CRDs being managed by the operator
+<10> Each CRD can be described as `owned` (by the operator), `required` (as a dependency to deploy the operator), or `optional` (features that can be enabled via CR)
+<11> The GVK and name of the CRD
+<12> Here we list the dependent K8s resources being managed by the operator (Pod, Deployment, Service & ConfigMap in this case)
+<13> Under `specDescriptors` we can list descriptive info for each field that can be altered in the `spec` section of the custom resource. Here we also provide the display name, the json path to the field, and also `x-descriptors` for the backing K8s resources tied to each field
+<14> There is also a `statusDescriptors` field which mirrors the syntax of the `specDescriptors` field. Here we've listed an example Pod Status field, since the envoy-operator doesn't actually have any https://github.com/solo-io/envoy-operator/blob/master/pkg/apis/envoy/v1alpha1/types.go[types defined] for the CR status (links to the golang source for the operator)
+<15> A long description of the custom resource
+
+That's all there is to writing a CSV file, in order to use your operator with OLM. We'll be posting more blog content for operators soon, so keep checking back.
