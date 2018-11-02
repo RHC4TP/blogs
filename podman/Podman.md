@@ -39,9 +39,10 @@ Push your image. *Please note this is an example, you will need to copy the comm
 
 `$ docker push scan.connect.redhat.com/ospid-12345678-9100-abcd-efg-hijklmnopqr/[image-name]:[tag]`
 
+***
 
+There is so much more you can do with Podman. We highly recommend installing this tool and taking advantage of its features. For more information and documentation you can go to: [Podman](https://podman.io/) 
 
-There is so much more you can do with Podman. We highly recommend installing this tool and taking advantage of its features. For more information and further documentation you can go to: [Podman](https://podman.io/) 
-
+### *Happy Containerizing!*
 
 
