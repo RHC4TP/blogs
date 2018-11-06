@@ -1,0 +1,70 @@
+= Quay Repository Creation
+ifdef::env-github[]
+:imagesdir: ../assets/
+endif::[]
+
+This guide serves as a demonstration for creating a new container repository in https://quay.io[Quay]. Here we'll walkthrough creating a repository for container images, building and tagging your container locally, pushing the image to Quay, and pulling images. 
+
+== Prerequisites: 
+*Quay.io account* - you can register for a Quay account https://quay.io/signin/[here]
+
+*Docker installed* - follow Docker's https://docs.docker.com/install/[documentation] to find the correct installation for your system
+
+== Step One: Create Repository
+*_Click on "Create New Repository"_*
+
+image::new_repo.png[]
+---
+
+*_Set type to "Container Image Repository" and input a repository name. Optionally, add a description._*
+
+image::container-image.png[]
+---
+
+*_Set the repository to public_*
+
+image::public-repo.png[]
+---
+*_Initialize as empty. Then click "Create Public Repository"_*
+
+image::empty-repo.png[]
+---
+== Step Two: Build Container
+Now that your container repository is setup, build your container. I'll be building a simple Apache web server, using a RHEL base image. You can find the Dockerfile https://github.com/RHC4TP/starter/blob/master/Container%20Zone/Examples/WebServer_Dockerfile_RHEL[here]. +
+
+*_Build the container_*
+----
+docker build . 
+----
+*_Run the container_*
+----
+docker run -d -p 8080:80 <IMAGE ID>
+----
+*_Tag the active container to an image name_*
+----
+docker commit <CONTAINER ID> quay.io/username/repo
+----
+
+The method above describes creating an image based off an active container. If you'd like to build an image from the Dockerfile and tag it right away, try this: 
+----
+docker build -t quay.io/username/repo . 
+----
+
+== Step Three: Push Image
+
+Now we can push our container image to our repository we created
+
+*_Login to Quay using Docker_*
+----
+docker login quay.io
+----
+
+*_Push the image_*
+----
+docker push quay.io/username/repo
+----
+== Step Four: Pull Image
+With our image pushed to our repository, you can now pull the image and make changes locally
+----
+docker pull quay.io/username/repo
+----
