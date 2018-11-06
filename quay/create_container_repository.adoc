@@ -1,6 +1,6 @@
 = Quay Repository Creation
 ifdef::env-github[]
-:imagesdir: ../assets/
+:imagesdir: ../../assets/
 endif::[]
 
 This guide serves as a demonstration for creating a new container repository in https://quay.io[Quay]. Here we'll walkthrough creating a repository for container images, building and tagging your container locally, pushing the image to Quay, and pulling images. 
