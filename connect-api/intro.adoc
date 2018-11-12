@@ -1,6 +1,6 @@
 = Introduction to Red Hat Connect API
 ifdef::env-github[]
-:imagesdir: ../assets/
+:imagesdir: ../../assets/
 endif::[]
 
 This guide is meant to serve as an introduction to using the Red Hat Partner Connect API endpoint. The API has several useful features that can be leveraged, including pulling information about your container projects and triggering new builds with the Build Service. Let’s start off by reaching the endpoint from which you’ll run all commands.
