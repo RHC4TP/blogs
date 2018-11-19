@@ -1,6 +1,6 @@
 = RHEL Quick Start: Container Zone
 ifdef::env-github[]
-:imagesdir: ../assets/
+:imagesdir: ../../assets/quick-start/
 endif::[]
 :toc:
 :toc-placement!:
