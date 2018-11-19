@@ -190,7 +190,7 @@ image:Picture17.png[500,400]
 
 == Next Steps
 
-You can see that my Apache Web Server image has now been upload and passed the security scan
+You can see that my Apache Web Server image has now been uploaded and passed the security scan
 
 image:Picture18.png[500,400]
 {sp} + 
