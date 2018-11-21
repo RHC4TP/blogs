@@ -1,0 +1,209 @@
+= RHEL Quick Start: Container Zone
+ifdef::env-github[]
+:imagesdir: ../../assets/quick-start/
+endif::[]
+:toc:
+:toc-placement!:
+
+This walkthrough is meant for members of the https://connect.redhat.com[Red Hat Partner Connect] program looking to upload a container image to the web portal and publish in the https://access.redhat.com/containers/[Red Hat Container Catalog(RHCC)]. The scope of this guide is to cover an end to end scenario for partners, from the installation and setup of Red Hat Enterprise Linux (RHEL) to uploading built containers to Red Hat Partner Connect for certification and publishing.  + 
+
+toc::[]
+
+
+== Obtain Active Subscription for RHEL
+Technology partners can request no cost software subscriptions through the Red Hat Partner Connect site https://connect.redhat.com/benefits/software-access[here]. + 
+
+Scroll down, choose the platform to request access for, and click “request subscription”. You will receive an email regarding the status of your request. + 
+
+image::Picture1.png[300,300]
+{sp} + 
+
+== Download RHEL
+Once you have obtained an active subscription, we can download RHEL. Head to the https://access.redhat.com/[Customer Portal].
+
+*_Login and click "Downloads"_* +
+
+image::Picture2.png[250,700]
+{sp} + 
+
+*_Select “Download Latest (Server)”_* +
+
+image::Picture3-1.png[250,700]
+{sp} + 
+
+*_Select the version of RHEL you wish to download_* + 
+
+image::Picture4.png[250,700]
+{sp} + 
+
+*_Click “Download Now” next to the file format of your choosing_* + 
+
+image::Picture5.png[300,700]
+{sp} + 
+
+== Install RHEL
+For this guide, I'll be installing RHEL on a virtual machine. However, the installation process will be the same on whichever platform you choose. 
+
+*_Press enter to begin the installation_*
+
+image:Picture6.png[500,400]
+{sp} + 
+{sp} + 
+
+*_Choose a language and click continue_*
+
+image:Picture7.png[500,400]
+{sp} + 
+{sp} + 
+
+Here an installation dashboard will appear. You can customize the installation to fit your needs by selecting the different icons. When your happy with the chosen settings, click *_Begin Installation_*
+
+image:Picture8.png[500,400]
+{sp} + 
+{sp} + 
+
+Make sure to enter a *_root password_* and *_create a user_* for your system, while the installation is loading. 
+
+image:Picture9.png[500,400]
+{sp} + 
+{sp} + 
+
+
+== Register and Setup Subsciption Manager
+Now with RHEL installed, let’s register the system to your Customer Portal account with subscription manager. At the command line, use your Red Hat account username and password to register:
+----
+# subscription-manager register --username <myusername> --password <mypassword>
+
+  This system has been registered with id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+----
+
+You can view a list of systems registered to your account within the https://access.redhat.com/management/systems[Customer Portal]. + 
+*List of systems:*
+
+image:Picture10.png[500,400]
+{sp} + 
+{sp} + 
+
+*Detailed view:* the red box next to my system indicates there are no subscriptions attached to my system. We'll fix that next.
+
+image:Picture11.png[500,400]
+{sp} + 
+{sp} + 
+
+Now list all the available subscriptions for your system and note the *Pool ID* of the one you want to attach:
+----
+subscruption-manager list --available
+----
+
+Attach the subscription:
+----
+subscription-manager attach --pool=<PoolID>
+----
+
+Alternatively, you can automatically attach the subscription that best fits your system using:
+----
+subscription-manager attach --auto
+----
+
+You can check the attached subscriptions being used by your system with:
+----
+subscription-manager list --consumed
+----
+== Install Docker
+Before installing Docker, your system will need to enable some specific Red Hat repositories:
+----
+subscription-manager repos --enable=rhel-7-server-rpms
+----
+----
+subscription-manager repos --enable=rhel-7-server-extras-rpms
+----
+----
+subscription-manager repos --enable=rhel-7-server-optional-rpms
+----
+
+Now, install Docker using Yum:
+----
+yum install docker
+----
+
+Enable the Docker service:
+----
+systemctl enable docker
+----
+
+Start the Docker service:
+----
+systemctl start docker
+----
+
+== Build Container
+We can finally get to the fun stuff now, building our own containers. For partners wishing to publish a container in RHCC, note that your container must follow the https://connect.redhat.com/zones/containers/container-certification-policy-guide[Container Certification Policy Guide] to pass the security scan in Connect. I'll be building a simple Apache web server that follows the policy guide for demonstration purposes. You can find the Dockerfile https://github.com/RHC4TP/starter/tree/master/Container%20Zone/Examples[here] if you want to follow along. 
+
+First we'll simply build the container image from the Dockerfile:
+----
+docker build . 
+----
+
+Check that the image was built and note the image ID (we'll use this to upload the image to Connect):
+----
+docker images
+----
+
+== Upload Image to Red Hat Partner Connect
+With our container image built locally, we can now push the image to the Red Hat Partner Connect registry. Once uploaded, the image will undergo a security scan to determine if the image meets all requirements from the policy guide and is allowed to be published to RHCC. 
+
+Head to your project page in Connect and select the tab "Upload Your Image"
+
+image:Picture12.png[500,400]
+{sp} + 
+{sp} + 
+
+Scroll down to "Container Registry Login" and copy the command into your local terminal 
+
+image:Picture13.png[500,400]
+{sp} + 
+{sp} + 
+
+Enter the key provided in the "View Registry Key" section
+
+image:Picture14.png[500,400]
+{sp} + 
+{sp} + 
+
+Tag the Container image, using the image ID from before, an image name of your choosing, and a descriptive tag
+
+image:Picture15.png[500,400]
+{sp} + 
+{sp} + 
+
+Finally, push your container to the registry using the image-name and tag you declared in the step above
+
+image:Picture16.png[500,400]
+{sp} + 
+{sp} + 
+
+You can view the pushed image in the "Container Information" tab of your project
+
+image:Picture17.png[500,400]
+{sp} + 
+{sp} + 
+
+== Next Steps
+
+You can see that my Apache Web Server image has now been uploaded and passed the security scan
+
+image:Picture18.png[500,400]
+{sp} + 
+{sp} + 
+
+
+However, we're still not given the option to publish to RHCC. This is because we need to complete all steps of the *Certification Checklist* before publishing. You can find more information on completing each step by clicking the drop down arrows. 
+
+image:Picture19.png[500,400]
+{sp} + 
+{sp} + 
+
+And that's it! Give yourself a pat on the back. You've now setup your own RHEL system and registered with subscription manager, built a container using Docker, and uploaded it to Red Hat Partner Connect for publishing. + 
+
+For further information on the Connect portal and the certification process, be sure to check out the official https://github.com/RHC4TP/documentation/tree/master/Red%20Hat%20OpenShift%20-%20Container%20Zone[documentation].
+

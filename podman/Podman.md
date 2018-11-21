@@ -1,4 +1,4 @@
-With the release of Red Hat Enterprise Linux 7.6 (link: http://www.eweek.com/enterprise-apps/red-hat-enterprise-linux-7.6-launches-with-improved-security) , there are several new features being introduced. Once of them, which we think is really cool and helps get our enviorment set up quicker, is a new way to build container image called podman.
+With the release of [Red Hat Enterprise Linux 7.6](http://www.eweek.com/enterprise-apps/red-hat-enterprise-linux-7.6-launches-with-improved-security) , there are several new features being introduced. One of them, which we think is really cool and helps get our enviorment set up quicker, is a new way to build container image called Podman.
 
 
 ## What is Podman?
@@ -39,7 +39,10 @@ Push your image. *Please note this is an example, you will need to copy the comm
 
 `$ docker push scan.connect.redhat.com/ospid-12345678-9100-abcd-efg-hijklmnopqr/[image-name]:[tag]`
 
-Other thing you can do with Podman are:
+***
+
+There is so much more you can do with Podman. We highly recommend installing this tool and taking advantage of its features. For more information and documentation you can go to: [Podman](https://podman.io/) 
+
+### *Happy Containerizing!*
 
 
-For more information about what podman can do go to here (link)

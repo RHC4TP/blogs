@@ -1,0 +1,43 @@
+= Introduction to Red Hat Connect API
+ifdef::env-github[]
+:imagesdir: ../../assets/
+endif::[]
+
+This guide is meant to serve as an introduction to using the Red Hat Partner Connect API endpoint. The API has several useful features that can be leveraged, including pulling information about your container projects and triggering new builds with the Build Service. Let’s start off by reaching the endpoint from which you’ll run all commands.
+
+----
+$ curl https://connect.redhat.com/api/v2
+Services Endpoint “rhc4tp_v2” has been setup successfully
+----
+
+By using the “curl” command we can see that the Connect API is reachable and setup correctly for us. Now let’s interact with the API, by using a Container projects specific Project ID (PID). You can find the PID by heading to your project page.
+
+image::connect-project.png[]
+---
+
+Click on the “Upload Your Image” tab and scroll down to the “Tag Your Container” section. 
+
+image::connect-tag.png[]
+---
+
+Here you’ll find a long command that includes scan.connect.redhat.com/<PID>. You’ll find the PID either in the form of “p123456789” or “ospid-xxxx-xxxx-xxxx-xxxx-xxxx”. Either of these formats will work to access your project from the API endpoint.
+
+Now let’s see what we can do with the API using our PID. 
+
+----
+$ GET https://connect.redhat.com/api/v2/projects/ospid-xxxx-xxxx-xxxx-xxxx-xxxx
+----
+
+This command will pull information about your specific project from Connect, such as the Health Index grade, namespace, repository, status of the security scan, and Build Service options. Here is a helpful chart you can use to query the API for specific information about your container image:
+
+image::connect-chart1.png[]
+
+Another useful feature is the ability to trigger new builds of your container image. Note that you must have the Build Service enabled and configured properly for this to work. Here’s an example of creating a new build with the “POST” command:
+
+----
+$ curl -H "Content-Type: application/json" -X POST -d '{"tag":"0.9"}' https://connect.redhat.com/api/v2/projects/p123456789/build
+----
+
+Make sure to include a tag and your PID within the command. If done correctly, a new build will appear in the Build Service section of your project. If the POST command runs into errors, here’s a chart that can help you troubleshoot: 
+
+image::connect-chart2.png[]
