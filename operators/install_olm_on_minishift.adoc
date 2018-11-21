@@ -1,0 +1,106 @@
+== Install the Operator Lifecycle Manager onto Minishift
+We've previously covered installing the Operator Lifecycle Manager (OLM) Technology Preview onto OpenShift Container Platform (OCP) 3.11. In this article, we'll cover installing OLM on a Minishift cluster to assist in offline development and testing of operators. We won't be using Ansible due to lacking a playbook, and instead manually installing OLM onto Minishift. You'll obviously need Minishift and the OC binary (which also ships w/Minishift), and also git in order to clone the necessary code repo. It is also assumed that the reader is on either a RHEL, CentOS or Fedora platform.
+
+The first step is to clone the OLM code repository, after creating a `src` directory to keep it (unless you already have something similar on your box):
+
+----
+mkdir -p ~/src/github.com/operator-framework
+cd ~/src/github.com/operator-framework
+git clone https://github.com/operator-framework/operator-lifecycle-manager
+----
+
+Crank up minishift, enable the `oc` binary and login as `system:admin`:
+
+----
+minishift start
+eval $(minishift oc-env)
+oc login -u system:admin
+----
+
+We will install OLM v0.7.2, creating each manifest individually in order to see the individual bits and pieces of OLM.
+
+Begin by creating the `openshift-operator-lifecycle-manager` namespace:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/0000_30_00-namespace.yaml
+----
+
+Switch context into the new namespace:
+
+----
+oc project openshift-operator-lifecycle-manager
+----
+
+Create the `olm-operator` Service Account, Cluter Role, and Cluster Role Binding:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/0000_30_01-olm-operator.serviceaccount.yaml
+----
+
+Create the Custom Resource Definitions (CRDs):
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/*.crd.yaml
+----
+
+Verify all four CRDs (`ClusterServiceVersion`, `InstallPlan`, `Subscription` and `CatalogSource`) are in place:
+
+----
+oc get crds
+----
+
+Create the `rh-operators` CatalogSource ConfigMap:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/0000_30_06-rh-operators.configmap.yaml
+----
+
+Create the `rh-operators` CatalogSource:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/0000_30_09-rh-operators.catalogsource.yaml
+----
+
+Create both of the Operators that power OLM:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/*.deployment.yaml
+----
+
+Verify that both OLM Operators (`olm-operator` and `catalog-operator`) are running properly:
+
+----
+oc get pods
+----
+
+Create the Aggregate `view` and `edit` ClusterRoles:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/0000_30_12-aggregated.clusterrole.yaml
+----
+
+Create the `package-server` Deployment and Service:
+
+----
+oc create -f operator-lifecycle-manager/deploy/okd/manifests/0.7.2/0000_30_13-packageserver.yaml
+----
+
+Verify that `package-server` is running, in addition to the two existing Operators:
+
+----
+oc get pods
+----
+
+The local console proxy uses the `system:serviceaccount:kube-system:default` Service Account to access all K8s resources. Grant this Service Account `cluster-admin` access (and refresh the UI if you've loaded it already):
+
+----
+oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:kube-system:default
+----
+
+With all of the OLM resources created and cluster permissions granted (where required), you can launch the cluster console using the following script:
+
+----
+./operator-lifecycle-manager/scripts/run_console_local.sh
+----
+
+You should now be able to access the UI at http://localhost:9000 in a web browser. If you ever need to launch the console again (after a system restart), just start minishift, login as `system:admin` and run the script above. The OLM resources that you've created will persist until you run `minishift delete` which will purge the existing minishift cluster of all persistent data (effectively resetting the VM). We hope you've enjoyed this article, and found it to be useful. Keep a look out for future blog content from Red Hat Partner Connect.
