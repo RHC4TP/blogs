@@ -1,0 +1,155 @@
+== Using Helm on OpenShift (in a non-invasive way)
+Helm is a form of package management for Kubernetes, where the packages themselves (templated resources) are called Helm Charts. OpenShift uses https://docs.openshift.com/container-platform/latest/dev_guide/templates.html[Templates] in lieu of Helm Charts, which effectively perform the same function. However, some partners have expressed a desire for a "one-size-fits-all" approach to Cloud Native package management, and thus an interest in targeting Helm Charts as a universal K8s packaging format. Templates aren't going away in OpenShift, however in this article we'll cover deploying an application using Helm on OpenShift as an alternative approach. We'll cover installing the `helm` CLI and using it to render Helm Charts into deployable K8s objects in OpenShift (you can also use this method for Minishift). Note that we don't advocate the use of Tiller (the server portion of Helm) due to security concerns, and thus it is considered (by this author at least) as an invasive approach when used in conjunction with OpenShift. You can also reference https://blog.openshift.com/from-templates-to-openshift-helm-charts/[this blog] on how to convert an OpenShift Template into a Helm Chart.
+
+The first step is to install the `helm` binary onto your host machine in `/usr/local/bin` (you'll need root permissions):
+
+----
+cd ~/Downloads
+curl -LO https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz
+tar -xzvf helm-v.2.11.0-linux-amd64.tar.gz --strip-components=1 -C /usr/local/bin */helm
+----
+
+You'll need to know how to search the Helm repositories for charts. For that you can use the `helm search` command to see which charts are available in the various repos:
+
+----
+helm search stable/
+----
+
+In the above command we searched the `stable/` repo and printed a list of all charts in the repo. You could also use `helm search` with no arguments and it will perform a broader search, printing all charts from all repos. Performing a search for a specific chart can be done by placing a chart name after the repo:
+
+----
+helm search stable/tomcat
+----
+
+You'll see in the search output that the `tomcat-v0.1.0` chart was found:
+
+----
+NAME         	CHART VERSION	APP VERSION	DESCRIPTION                                                 
+stable/tomcat	0.1.0        	7          	Deploy a basic tomcat application server with sidecar as ...
+----
+
+Using the `helm` client, you can fetch chart archives (in tar.gz format) from the official `stable` repository, and optionally unpack them into your current directory. Let's fetch the `stable/tomcat` chart:
+
+----
+helm fetch --untar stable/tomcat
+----
+
+You should now have a folder named `tomcat/` in your current directory. We've chosen to unpack (`--untar`) the chart archive to inspect the various components of the `tomcat` chart:
+
+|===
+|Path |Description
+
+|tomcat/
+|Base chart directory
+
+|tomcat/Chart.yaml
+|Metadata file for this chart
+
+|tomcat/values.yaml
+|Custom fields to be used in K8s templates
+
+|tomcat/README.md
+|GitHub Flavored Markdown (GFM) formatted README file
+
+|tomcat/templates/
+|Directory that contains all of the templated K8s resources
+
+|tomcat/_helpers.tpl
+|File used for creating deterministic fields for the chart (eg: tomcat.name, tomcat.fullname, etc)
+
+|tomcat/appsrv.yaml
+|Templated K8s Deployment resource for Tomcat
+
+|tomcat/appsrv-svc.yaml
+|Templated K8s Service resource for Tomcat
+
+|tomcat/NOTES.txt
+|Additional notes for editing the templated resources
+|===
+
+Now that we've inspected the `tomcat` chart, lets try rendering the chart into a set of deployable K8s resources:
+
+----
+helm template tomcat/
+----
+
+You'll see both the K8s Deployment and Service objects rendered in the output:
+
+----
+---
+# Source: tomcat/templates/appsrv-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: RELEASE-NAME-tomcat
+  labels:
+    app: tomcat
+    chart: tomcat-0.1.0
+    release: RELEASE-NAME
+    heritage: Tiller
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: tomcat
+    release: RELEASE-NAME
+
+---
+# Source: tomcat/templates/appsrv.yaml
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: RELEASE-NAME-tomcat
+  labels:
+    app: tomcat
+    chart: tomcat-0.1.0
+    release: RELEASE-NAME
+    heritage: Tiller
+spec:
+  replicas: 1
+...
+----
+
+Since the `helm template` command generates deployable K8s resources, we could pipe this output into `oc create` and deploy it onto our OpenShift environment. There is one gotcha here: Notice in the above rendered file that `RELEASE-NAME` is substituted for all fields using `{{ Release.Name }}` in the respective templates. Since we didn't name our release (a term that Helm uses for a deployed chart instance) it was substituted with this K8s-invalid value (K8s rejects capitalized values for labels). We can fix this and make it K8s deployable by adding a release name to our `helm template` command:
+
+----
+helm template -n test1 tomcat
+----
+
+You'll see that instead of `RELEASE-NAME` it is now `test1`:
+
+----
+# Source: tomcat/templates/appsrv.yaml
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: test1-tomcat
+  labels:
+    app: tomcat
+    chart: tomcat-0.1.0
+    release: test1
+    heritage: Tiller
+...
+----
+
+Now, let's deploy this chart onto our OpenShift (or Minishift) environment:
+
+----
+oc new-project tomcat-test1
+helm template -n test1 tomcat | oc create -f -
+----
+
+You should now see these resources being created. Run each of the following commands to get a listing of the project status, as well as the K8s deployment, service and pod resources:
+
+----
+oc status
+oc get deployment
+oc get service
+oc get pods
+----
+
+That wraps up this article on using Helm on OpenShift (in a non-invasive way). Keep a lookout for more blog content from Red Hat Partner Connect.
