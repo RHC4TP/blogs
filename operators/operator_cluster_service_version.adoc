@@ -6,7 +6,7 @@ The Operator Lifecycle Manager (OLM) launched with OpenShift 3.11 as a Technolog
 * An `rbac.yaml` file which grants the required cluster permissions to the operator
 * A `crd.yaml` (Custom Resource Definition) file associated with the operator
 
-If you don't have an operator for your application, you can still follow along. See the list of https://github.com/operator-frameword/awesome-operators[Awesome Operators] on GitHub. We've selected the https://github.com/solo-io/envoy-operator/tree/master/deploy[envoy-operator] from this list to use in our example, which doesn't have an existing CSV. Rather than explaining each section in detail, we've provided a custom-written CSV with callouts explaining key fields:
+If you don't have an operator for your application, you can still follow along. See the list of https://github.com/operator-framework/awesome-operators[Awesome Operators] on GitHub. We've selected the https://github.com/solo-io/envoy-operator/tree/master/deploy[envoy-operator] from this list to use in our example, which doesn't have an existing CSV. Rather than explaining each section in detail, we've provided a custom-written CSV with callouts explaining key fields:
 
 ----
 apiVersion: operators.coreos.com/v1alpha1 <1>
