@@ -1,0 +1,103 @@
+== Converting a Container Image to RHEL
+In this post, we'll discover how to convert a typical container image from a non-RHEL base over to using RHEL. 
+For base images such as CentOS or Fedora, this process is usually a smooth transition done by simply changing the `FROM` line in the Dockerfile to use RHEL instead.
+For other distributions, such as Ubuntu or Debian, this can be more involved, mainly due to differing package management (and sometimes package names) for these distros.
+Keep in mind that it is a no-no (in violation of Red Hat's Subscription Agreement) to push RHEL based images to community repositories, such as docker.io or quay.io.
+This article is intended to assist Red Hat Partners with converting their images over the RHEL platform, for publishing to the https://access.redhat.com/containers[Red Hat Container Catalog].
+
+We can start with a simple Dockerfile (courtesy of our friends at Kong) which uses an Alpine image as its base:
+
+----
+FROM alpine:3.6
+LABEL maintainer="Kong Core Team <team-core@konghq.com>"
+
+ENV KONG_VERSION 1.0.0rc3
+ENV KONG_SHA256 a71ecdc90dd9af72a9305b4007753d237e1b982a912902ac687cfa119cac865e
+
+RUN apk add --no-cache --virtual .build-deps wget tar ca-certificates \
+	&& apk add --no-cache libgcc openssl pcre perl tzdata curl \
+	&& wget -O kong.tar.gz "https://bintray.com/kong/kong-community-edition-alpine-tar/download_file?file_path=kong-community-edition-$KONG_VERSION.apk.tar.gz" \
+	&& echo "$KONG_SHA256 *kong.tar.gz" | sha256sum -c - \
+	&& tar -xzf kong.tar.gz -C /tmp \
+	&& rm -f kong.tar.gz \
+	&& cp -R /tmp/usr / \
+	&& rm -rf /tmp/usr \
+	&& cp -R /tmp/etc / \
+	&& rm -rf /tmp/etc \
+	&& apk del .build-deps \
+	# OpenShift specific. OpenShift runs containers using an arbitrarily assigned user ID.
+	# This user doesn't have access to change file permissions during runtime, they have to be changed during image building.
+	# https://docs.okd.io/latest/creating_images/guidelines.html#use-uid
+	&& mkdir -p "/usr/local/kong" \
+	&& chgrp -R 0 "/usr/local/kong" \
+	&& chmod -R g=u "/usr/local/kong"
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+EXPOSE 8000 8443 8001 8444
+
+STOPSIGNAL SIGTERM
+
+CMD ["kong", "docker-start"]
+----
+
+You'll see that the very first line `FROM alpine:3.6` declares the Alpine base image.
+The next key difference is under the `RUN` command a few lines down, where the `apk` package manager gets used to install a few missing packages (`tar`, `wget`, `ca-certificates` and a few others).
+Installing these common Linux utilities are necessary since Alpine is a minimal Linux image akin to RHEL Atomic.
+Alpine, however makes further compromises such as using `musl` as the core C library over `glibc`, among other choices which contribute to its extremely small comparitive size.
+This is not a slight against Alpine, just a notable compromise as the vast majority of Linux software is compiled against `glibc`.
+
+The last item to note in the above Dockerfile is that the ISV software (in this case for Kong) uses a generic tar.gz archive over a distribution-specific packaging format (eg: rpm or deb).
+The tar format could be retained when converting the container image to RHEL if desired.
+If your software is in another package format (such as deb), then you must convert the package(s) to either tar or rpm format.
+Documentation on creating an RPM for RHEL can be found https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html-single/rpm_packaging_guide/index[here].
+
+Here is the RHEL version of the Dockerfile for Kong:
+
+----
+FROM registry.access.redhat.com/rhel7
+
+MAINTAINER Kong
+
+ENV KONG_VERSION 0.14.1
+
+LABEL name="Kong" \
+      vendor="Kong" \
+      version="${KONG_VERSION}" \
+      release="1" \
+      url="https://konghq.com" \
+      summary="Next-Generation API Platform for Modern Architectures" \
+      description="Next-Generation API Platform for Modern Architectures"
+
+COPY LICENSE /licenses/
+
+RUN yum install -y wget https://bintray.com/kong/kong-community-edition-rpm/download_file?file_path=rhel/7/kong-community-edition-$KONG_VERSION.rhel7.noarch.rpm && \
+    yum clean all && \
+    # OpenShift specific. OpenShift runs containers using an arbitrarily assigned user ID.
+    # This user doesn't have access to change file permissions during runtime, they have to be changed during image building.
+    # https://docs.okd.io/latest/creating_images/guidelines.html#use-uid
+    mkdir -p "/usr/local/kong" && \
+    chgrp -R 0 "/usr/local/kong" && \
+    chmod -R g=u "/usr/local/kong"
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+EXPOSE 8000 8443 8001 8444
+
+STOPSIGNAL SIGTERM
+
+CMD ["kong", "docker-start"]
+----
+
+The notable differences with this Dockerfile are the `FROM registry.access.redhat.com/rhel7` line, and also the `RUN` line which now uses `yum` to directly install an rpm package from a hosted repository.
+Using RHEL in this case simplifies the Dockerfile quite a bit, as we no longer have to install common Linux utilies such as `tar` and `wget` in order to download and install the ISV software package.
+The manual steps of extracting the tar archive and then removing it are no longer required, since the folks at Kong have chosen to package their software into the RPM format.
+If they'd chosen to continue using the tar format instead, then they'd still need to download, extract and remove the archive.
+If RHEL Atomic was used in conjunction with tar, then the `tar` and `wget` commands would need to be installed as with Alpine, as these utilities don't ship in the RHEL Atomic image.
+
+A final thing to note is that the RHEL Dockerfile for Kong is fully configured to publish to the https://access.redhat.com/containers[Red Hat Container Catalog].
+These additional requirements include the `LABEL`'s for the container image, and the `/licenses/` directory containing the applicable software license.
+These requirements (in conjunction with being a RHEL-based image) are necessary for ISV partners that wish to publish their image to RHCC by participating in the https://connect.redhat.com[Red Hat Partner Connect] program.
