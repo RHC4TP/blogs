@@ -1,6 +1,6 @@
 = Registry Service Account for Openshift
 ifdef::env-github[]
-:imagesdir: ../assets/
+:imagesdir: ../../assets/service-account/
 endif::[]
 
 This guide serves as a demonstration for creating a Registry Service Account for your Openshift cluster, specifically for consuming container images from registry.redhat.io. Using a Registry Service Account for a shared environment, such as an Openshift cluster, frees the administrator from needing to save personal Customer Portal credentials in the configuration. In order to create a Registry Service Account you must have a Red Hat Customer account, which is the login used to for access.redhat.com. For Red Hat Technology Partners, you can request no cost software subscriptions that include access to the Customer Portal https://connect.redhat.com/benefits/software-access[here]. For this guide, make sure you have an Openshift cluster running with permission to create secrets.   
