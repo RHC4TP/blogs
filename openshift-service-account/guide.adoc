@@ -35,7 +35,7 @@ image::3.png[]
 
 *_Under step 1, click "view its contents" and copy the secret's YAML contents_* 
 
-image::4.png[]
+image::4.png[][100,400]
 ---
 Alternatively, you can simply download the YAML file and upload it to your cluster.
 
