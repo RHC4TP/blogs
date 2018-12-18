@@ -35,7 +35,7 @@ image::3.png[]
 
 *_Under step 1, click "view its contents" and copy the secret's YAML contents_* 
 
-image::3.png[]
+image::4.png[]
 ---
 Alternatively, you can simply download the YAML file and upload it to your cluster.
 
@@ -53,4 +53,4 @@ kubectl create -f <service-account-name>-secret.yml --namespace=NAMESPACEHERE
 
 *_Add the pull secret to your pods config file_*
 In the yaml file used to create your pods, add a "imagePullSecrets" field and the name of your pull secret under "spec". An example file is given on step 3 of the instructions for your service account. 
-image::4.png[]
+image::5.png[]
