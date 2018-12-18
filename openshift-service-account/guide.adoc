@@ -22,7 +22,7 @@ image::1.png[]
 
 *_Enter a Service Account name and description, then click create_*
 
-image::2.png[]
+image::6.png[]
 ---
 
 == Step Two: Configure Openshift Secret
