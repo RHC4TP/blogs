@@ -53,4 +53,5 @@ kubectl create -f <service-account-name>-secret.yml --namespace=NAMESPACEHERE
 
 *_Add the pull secret to your pods config file_*
 In the yaml file used to create your pods, add a "imagePullSecrets" field and the name of your pull secret under "spec". An example file is given on step 3 of the instructions for your service account. 
+
 image::5.png[]
