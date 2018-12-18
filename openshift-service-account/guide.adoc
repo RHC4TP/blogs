@@ -25,7 +25,8 @@ image::1.png[]
 image::6.png[]
 ---
 
-== Step Two: Configure Openshift Secret
+== Step Two: Configure Openshift Secret + 
+
 Now that you have a Registry Service Account create, we can apply it to your Openshift cluster. 
 
 *_Click the "Openshift Secret" tab_*
@@ -39,12 +40,10 @@ image::4.png[][100,400]
 ---
 Alternatively, you can simply download the YAML file and upload it to your cluster.
 
-*_Create the YAML file in your cluster_*
+*_Create the YAML file in your cluster and paste the secret's contents_*
 ----
 vi <service-account-name>-secret.yml
 ----
-
-*_Paste the secret's contents and save the file_*
 
 *_Apply the created secret to your cluster using kubectl_*
 ----
