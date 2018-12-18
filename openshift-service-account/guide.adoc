@@ -1,0 +1,56 @@
+= Registry Service Account for Openshift
+ifdef::env-github[]
+:imagesdir: ../assets/
+endif::[]
+
+This guide serves as a demonstration for creating a Registry Service Account for your Openshift cluster, specifically for consuming container images from registry.redhat.io. Using a Registry Service Account for a shared environment, such as an Openshift cluster, frees the administrator from needing to save personal Customer Portal credentials in the configuration. In order to create a Registry Service Account you must have a Red Hat Customer account, which is the login used to for access.redhat.com. For Red Hat Technology Partners, you can request no cost software subscriptions that include access to the Customer Portal https://connect.redhat.com/benefits/software-access[here]. For this guide, make sure you have an Openshift cluster running with permission to create secrets.   
+
+== Prerequisites: 
+*Red Hat Customer Portal Account*
+
+*Openshift cluster*
+
+*Kubectl CLI installed* find instructions https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl[here] 
+
+== Step One: Create Registry Service Account
+Go to https://access.redhat.com/terms-based-registry/ and login to your account if necessary
+
+*_Click on "New Service Account"_*
+
+image::1.png[]
+---
+
+*_Enter a Service Account name and description, then click create_*
+
+image::2.png[]
+---
+
+== Step Two: Configure Openshift Secret
+Now that you have a Registry Service Account create, we can apply it to your Openshift cluster. 
+
+*_Click the "Openshift Secret" tab_*
+
+image::3.png[]
+---
+
+*_Under step 1, click "view its contents" and copy the secret's YAML contents_* 
+
+image::3.png[]
+---
+Alternatively, you can simply download the YAML file and upload it to your cluster.
+
+*_Create the YAML file in your cluster_*
+----
+vi <service-account-name>-secret.yml
+----
+
+*_Paste the secret's contents and save the file_*
+
+*_Apply the created secret to your cluster using kubectl_*
+----
+kubectl create -f <service-account-name>-secret.yml --namespace=NAMESPACEHERE
+----
+
+*_Add the pull secret to your pods config file_*
+In the yaml file used to create your pods, add a "imagePullSecrets" field and the name of your pull secret under "spec". An example file is given on step 3 of the instructions for your service account. 
+image::4.png[]
