@@ -226,4 +226,4 @@ One more step is required since we've condensed the node count down to only 2 ho
 ...and that's it! Now you can setup https://docs.openshift.com/container-platform/3.11/install_config/persistent_storage/persistent_storage_nfs.html[persistent storage] by utilizing the NFS services that were setup on the master host during the install (which isn't covered here).
 Keep in mind, that using NFS for storage (if so provisioned) is not supported by Red Hat, but is mentioned here as being adequate for a simple/small-scale development cluster. 
 Hopefully, you've found this post to be a useful aide in migrating from the former Quick Installation method, or perhaps just as a scaled-down deployment of OpenShift.
-Stay tuned for upcoming blogs from the Red Hat Connect team.
+Stay tuned for upcoming blogs from the Red Hat Partner Connect team.
