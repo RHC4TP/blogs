@@ -1,16 +1,27 @@
 == Installing OpenShift Container Platform using Ansible
 
-OpenShift Container Platform 3.10 was https://blog.openshift.com/red-hat-openshift-container-platform-3-10-is-now-available-for-download/[recently released], and you may have noticed that the Quick Installation method has disappeared from the https://docs.openshift.com/container-platform/3.10/install/[official docs]. The Quick Installation was deprecated starting with OCP 3.9, and the associated documentation removed as part of the 3.10 release. The full release notes and list of new features for OCP 3.10 can be found https://docs.openshift.com/container-platform/3.10/release_notes/ocp_3_10_release_notes.html[here]. In this article, we'll provide an example of using the Ansible playbooks provided by the https://github.com/openshift/openshift-ansible[openshift-ansible] package. This method was formerly known as the Advanced Installation.
+OpenShift Container Platform 3.11 https://www.redhat.com/en/blog/generally-available-today-red-hat-openshift-container-platform-311-ready-power-enterprise-kubernetes-deployments[has been released], and you may have noticed that the Quick Installation method has disappeared from the https://docs.openshift.com/container-platform/3.11/install/[official docs].
+The Quick Installation was deprecated starting with OCP 3.9, and the associated documentation removed as part of the 3.10 release.
+The full release notes and list of new features for OCP 3.11 can be found https://docs.openshift.com/container-platform/3.11/release_notes/ocp_3_11_release_notes.html[here].
+In this article, we'll provide an example of using the Ansible playbooks provided by the https://github.com/openshift/openshift-ansible[openshift-ansible] package.
+This method was formerly known as the Advanced Installation.
 
-In this post, you'll be guided through the installation process, which is condensed down to 2 hosts (1 master and 1 node) for demonstration purposes only (or for personal dev/test use akin to https://www.openshift.org/minishift[Minishift]). Please note that this installation does _not_ meet the https://docs.openshift.com/container-platform/3.10/install_config/install/prerequisites.html[minimum requirements]. However, this very install was performed on a Broadwell i7 CPU (2-core/4-thread) laptop w/12GB of RAM and a 500GB HDD, where 2 vCPUs and 4GB RAM were allocated to each VM (running on a RHEL host using KVM/libvirt). 100GB of disk space was also allocated to each VM: 60GB for the root disk and another 40GB disk for docker storage. Each VM had RHEL 7 installed, and was then https://docs.openshift.com/container-platform/3.10/install/host_preparation.html[prepared] to install OpenShift. Our example libvirt environment was setup to assign the internally-resolvable domain name `openshift.local` to all VMs (using libvirt's own dnsmasq capabilities). The actual installation process involves modifying an example Ansible hosts file, copying it into place, and then calling `ansible-playbook`. 
+In this post, you'll be guided through the installation process, which is condensed down to 2 hosts (1 master and 1 node) for demonstration purposes only (or for personal dev/test use akin to https://www.openshift.org/minishift[Minishift]).
+Please note that this installation does _not_ meet the https://docs.openshift.com/container-platform/3.11/install_config/install/prerequisites.html[minimum requirements].
+However, this very install was performed on a Broadwell i7 CPU (2-core/4-thread) laptop w/12GB of RAM and a 500GB HDD, where 2 vCPUs and 4GB RAM were allocated to each VM (running on a RHEL host using KVM/libvirt).
+100GB of disk space was also allocated to each VM: 60GB for the root disk and another 40GB disk for docker storage.
+Each VM had RHEL 7 installed, and was then https://docs.openshift.com/container-platform/3.11/install/host_preparation.html[prepared] to install OpenShift.
+The Red Hat Partner Connect team has provided a handy https://github.com/RHC4TP/tooling/tree/master/openshift[host preparation script] which will help to simplify and speed up this task, but it is provided as-is with no warranty (so use it at your own risk and/or peril), and is not officially supported by Red Hat. 
+Our example libvirt environment was setup to assign the internally-resolvable domain name `openshift.local` to all VMs (using libvirt's own dnsmasq capabilities).
+The actual installation process involves modifying an example Ansible hosts file, copying it into place, and then calling `ansible-playbook`. 
 
-You can obtain the example ansible hosts file being used for OpenShift https://raw.githubusercontent.com/openshift/openshift-ansible/master/inventory/hosts.example[here], or alternatively by copying it from the following location on the OCP installation host, which is assumed to be the master host (from where all example commands are run as `root`):
+You can obtain the example ansible inventory used in OpenShift https://raw.githubusercontent.com/openshift/openshift-ansible/master/inventory/hosts.example[here], or alternatively by copying it from the following location on the OCP installation host, which is assumed to be the master host (from where all example commands are run as `root`):
 
 ----
 # cp /usr/share/doc/openshift-ansible-docs*/docs/example-inventories/hosts.example ./
 ----
 
-Below is a snippet from the uppermost section of the `hosts.example` file as it gets shipped in OCP 3.10, along with notations describing key aspects of the file:
+Below is a snippet from the uppermost section of the `hosts.example` file as it gets shipped in OCP 3.11, along with notations describing key aspects of the file:
 
 ----
 [masters] <1>
@@ -77,7 +88,7 @@ openshift_master_cluster_hostname=ose3-lb.test.example.com
 ###############################################################################
 ...
 ----
-<1> The ini config file format is used for the Ansible hosts file, with host groups defined in square brackets `[ ]`
+<1> The ini config file format is used for the Ansible inventory, with host groups defined in square brackets `[ ]`
 <2> The master hosts are listed in multiple groups, as they're assigned additional roles (such as etcd and nfs)
 <3> Sequence matching such as `[1..3]` is used to list multiple hosts onto the same line
 <4> `[OSEv3:children]` lists the subgroups that will be configured during the installation
@@ -85,7 +96,9 @@ openshift_master_cluster_hostname=ose3-lb.test.example.com
 <6> This upper section of `[OSEv3:vars]` contains key variables that must be changed according to your environment
 <7> Variables listed below this point are considered optional (most are commented out), but are included for fine-tunability
 
-All of these example hostnames will need to be changed to match the hostnames within your cluster. As stated previously, we use an example environment of 1 master and 1 node, and an example domain name of `openshift.local`. Below, you'll see the `hosts.example` file modified to reflect the hostnames and variables used in our example cluster, with each specific change notated:
+All of these example hostnames will need to be changed to match the hostnames within your cluster.
+As stated previously, we use an example environment of 1 master and 1 node, and an example domain name of `openshift.local`.
+Below, you'll see the `hosts.example` file modified to reflect the hostnames and variables used in our example cluster, with each specific change notated:
 
 ----
 [masters]
@@ -131,7 +144,7 @@ openshift_deployment_type=openshift-enterprise <7>
 # use this to lookup the latest exact version of the container images, which is the tag actually used to configure
 # the cluster. For RPM installations we just verify the version detected in your configured repos matches this
 # release.
-openshift_release=v3.10 <8>
+openshift_release=v3.11 <8>
 
 # default subdomain to use for exposed routes, you should have wildcard dns
 # for *.apps.test.example.com that points at your infra nodes which will run
@@ -154,43 +167,49 @@ openshift_release=v3.10 <8>
 <5> A load balancer is not utilized, so the `[lb]` group was removed, as well as the corresponding entries from `[OSEv3:children]`.
 <6> If you don't use the `root` account for passwordless access over ssh, then set `ansible_user` to the desired username (also requires passwordless sudo permissions).
 <7> To install OpenShift Container Platform (and not OpenShift Origin/OKD), you must comment out `openshift_deployment_type=origin` and uncomment `openshift_deployment_type=openshift-enterprise`.
-<8> We want the latest and greatest version of OpenShift, so `3.10` was defined in lieu of `3.9`.
+<8> We want the latest and greatest version of OpenShift, so `3.11` was defined in lieu of `3.9`.
 <9> If you don't have wildcard DNS setup for your cluster, then you can safely comment this out (defaulting to the hostname of the primary master).
 <10> We comment this line out since a load balancer isn't used (once again defaulting to the hostname of the primary master).
 
-If you are deploying to an environment with limited resources (such as a laptop), then you must disable the memory and disk availability checks that occur during the install. You can do this by adding the following line anywhere beneath the `[OSEv3:vars]` section:
+If you are deploying to an environment with limited resources (such as a laptop), then you must disable the memory and disk availability checks that occur during the install.
+You can do this by adding the following line anywhere beneath the `[OSEv3:vars]` section:
 
 ----
 openshift_disable_check=memory_availability,disk_availability
 ----
 
-There is one final edit that must be made to the Ansible hosts file before copying it into place. Scroll further down into the `[OSEv3:vars]` section and uncomment the following line to enable htpasswd authentication:
+There is one final edit that must be made to the Ansible hosts file before copying it into place.
+Scroll further down into the `[OSEv3:vars]` section and uncomment the following line to enable htpasswd authentication:
 
 ----
 # htpasswd auth
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
 ----
 
-Once you've finished editing the `hosts.example` file, you can copy it into place, optionally backing up the original `/etc/ansible/hosts` file beforehand. Assuming you are in the current directory of your modified `hosts.example` file, run the following commands:
+Once you've finished editing the `hosts.example` file, you can copy it into place, optionally backing up the original `/etc/ansible/hosts` file beforehand.
+Assuming you are in the current directory of your modified `hosts.example` file, run the following commands:
 
 ----
 # cp /etc/ansible/hosts{,.orig}
 # cp hosts.example /etc/ansible/hosts
 ----
 
-Now that the hosts file is configured in the default location, you are ready to launch Ansible. The `openshift-ansible` package provides a set of playbooks for installing, upgrading and configuring OpenShift. The `prerequisites.yml` playbook is the first phase of the installation, which handles configuration of the container runtime and host services such as firewall and ntp:
+Now that the hosts file is configured in the default location, you are ready to launch Ansible.
+The `openshift-ansible` package provides a set of playbooks for installing, upgrading and configuring OpenShift.
+The `prerequisites.yml` playbook is the first phase of the installation, which handles configuration of the container runtime and host services such as firewall and ntp:
 
 ----
 # ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
 ----
 
-Once the above playbook completes, install OpenShift 3.10 using the `deploy-cluster.yml` playbook:
+Once the above playbook completes, install OpenShift 3.11 using the `deploy-cluster.yml` playbook:
 
 ----
 # ansible-playbook /usr/share/ansible/openshift-ansible/playbooks/deploy_cluster.yml
 ----
 
-Now, crack open a cold beverage (or go grab some coffee if you prefer) and wait for the installation to complete (roughly 30 minutes on the hardware described). Assuming that each host was properly https://docs.openshift.com/container-platform/3.10/install_config/install/host_preparation.html[prepared] and meets the https://docs.openshift.com/container-platform/3.10/install_config/install/prerequisites.html[minimum requirements], then the installation should complete without failure.
+Now, crack open a cold beverage (or go grab some coffee if you prefer) and wait for the installation to complete (roughly 30 minutes on the hardware described).
+Assuming that each host was properly https://docs.openshift.com/container-platform/3.11/install/host_preparation.html[prepared] and meets the https://docs.openshift.com/container-platform/3.11/install/prerequisites.html[minimum requirements], then the installation should complete without failure.
 
 After the installation completes, you can create an account using `htpasswd`:
 
@@ -204,4 +223,7 @@ One more step is required since we've condensed the node count down to only 2 ho
 # oc label nodes node1.openshift.local node-role.kubernetes.io/compute=true
 ----
 
-...and that's it! Now you can setup https://docs.openshift.com/container-platform/3.10/install_config/persistent_storage/persistent_storage_nfs.html[persistent storage] by utilizing the NFS services that were setup on the master host during the install (which isn't covered here). Hopefully, you've found this post to be a useful aide in migrating from the former Quick Installation method, or perhaps just as a scaled-down deployment of OpenShift. Stay tuned for upcoming blogs from the Red Hat Connect team.
+...and that's it! Now you can setup https://docs.openshift.com/container-platform/3.11/install_config/persistent_storage/persistent_storage_nfs.html[persistent storage] by utilizing the NFS services that were setup on the master host during the install (which isn't covered here).
+Keep in mind, that using NFS for storage (if so provisioned) is not supported by Red Hat, but is mentioned here as being adequate for a simple/small-scale development cluster. 
+Hopefully, you've found this post to be a useful aide in migrating from the former Quick Installation method, or perhaps just as a scaled-down deployment of OpenShift.
+Stay tuned for upcoming blogs from the Red Hat Connect team.
