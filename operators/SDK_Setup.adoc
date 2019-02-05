@@ -101,13 +101,14 @@ make dep
 make install
 ----
 == Test Installation
-With the CLI installed, let's test to make sure its working properly. 
+With the CLI installed, you can run commands to create a new operator project. This will scaffold a file structure with templates to help your development. Here are two types of operators you can easily create: 
 
-Create a new helm operator project called example-operator
+Helm Operator
 ----
-operator-sdk new example-operator --api-version=example.com/v1alpha1 --kind=example --type=helm
+operator-sdk new helm-operator --api-version=example.com/v1alpha1 --kind=ExampleHelm --type=helm
 ----
-You should now see a new operator project has been created for you. Let's take a look at the file structure
+Ansible Operator
 ----
-cd example-operator && tree
+operator-sdk new ansible-operator --api-version foo.example.com/v1alpha1 --kind=ExampleAnsible --type ansible 
 ----
+
