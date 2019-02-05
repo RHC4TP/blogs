@@ -1,0 +1,113 @@
+= Setup Operator SDK for RHEL
+ifdef::env-github[]
+endif::[]
+
+This guide serves as a demonstration for installing the https://github.com/operator-framework/operator-sdk[Operator SDK] for a Red Hat Linux 7 machine. 
+
+We will first walkthrough installing all the dependencies required for using the SDK. This guide assumes that your RHEL machine is registered using subscription manager. For information on how to do this look https://access.redhat.com/solutions/253273[here].
+
+== Dependencies: 
+*Go version v1.10+* 
+
+*Dep version v0.5.0+*
+
+*Git*
+
+*Docker*
+
+== Install Go
+Install Golang via yum
+----
+sudo yum -y install golang
+----
+Create your Go workspace
+----
+cd ~ && mkdir go 
+----
+Create necessary subfolders for go 
+----
+cd go && mkdir src pkg bin
+----
+Add these lines to your bashrc file(most likely /etc/bashrc) to declare the GOPATH variable and add the directory to your PATH
+----
+export GOPATH=$HOME/go
+export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+----
+Apply the changes made
+----
+source /etc/bashrc
+----
+Confirm the GOPATH has been set correctly
+----
+echo $GOPATH
+----
+== Install Dep 
+download Dep and install via the install.sh script
+----
+curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+----
+verify Dep is installed and correct version
+----
+dep version
+----
+== Install Git
+Install git via yum
+----
+sudo yum -y install git
+----
+verify Git is installed and correct version
+----
+git version
+----
+== Install Docker
+First, we need to enable the "extras" RHEL repository 
+----
+sudo yum-config-manager --enable rhel-7-server-extras-rpms
+----
+Now install via yum
+----
+sudo yum install -y docker
+----
+Enable Docker for future usage
+----
+sudo systemctl enable docker
+----
+Start the Docker service
+----
+sudo systemctl start docker
+----
+verify Docker is installed and correct version
+----
+docker version
+----
+== Install Operator SDK CLI
+Create Operator Framework directory under your GOPATH. Change into new directory.
+----
+mkdir -p $GOPATH/src/github.com/operator-framework && cd $GOPATH/src/github.com/operator-framework
+----
+Clone the SDK project. Change into new directory.
+----
+git clone https://github.com/operator-framework/operator-sdk && cd operator-sdk
+----
+Change to master
+----
+git checkout master
+---- 
+Install dependencies of SDK. These commands may take a few moments to complete.
+----
+make dep
+----
+----
+make install
+----
+== Test Installation
+With the CLI installed, let's test to make sure its working properly. 
+
+Create a new helm operator project called example-operator
+----
+operator-sdk new example-operator --api-version=example.com/v1alpha1 --kind=example --type=helm
+----
+You should now see a new operator project has been created for you. Let's take a look at the file structure
+----
+cd example-operator && tree
+----
