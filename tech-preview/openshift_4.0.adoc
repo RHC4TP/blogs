@@ -1,0 +1,103 @@
+== Testing out the OpenShift 4.0 Developer Preview in AWS
+The OpenShift Container Platform (OCP) 4.0 developer preview is available, which showcases the following new technologies in conjunction with OpenShift:
+* Red Hat CoreOS - A new immutable, container based OS merging key features from Container Linux and RHEL Atomic
+* An all new automated installater that supports AWS (using Terraform), OpenStack, and libvirt (development only)
+* Operator Hub - A new marketplace interface for Operators that integrates with the Operator Lifecycle Manager
+
+The install process begins by visiting https://try.openshift.com, clicking the Get Started link and logging in with your RHN ID.
+The entire deployment is a relatively simply 5-step process:
+. Register a domain
+. Setup your AWS credentials
+. Download the installer
+. Create a cluster
+. Access the new cluster
+
+In this post, we'll go over each of these steps and give some oversight into how the installer works, which should https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md[aid in troubleshooting].
+
+=== Register your AWS Route53 Domain
+Assuming that you already have an account setup in AWS (and no domain created yet), sign into the AWS Console and select Route53 from the Services menu.
+Click "Registered Domains" in the side bar and then Register Domain (in blue) near the top of the page.
+
+image::../../assets/Screenshot_2019-02-18_13-39-51.png
+
+Once you've completed the registration process, it can take up to 3 days for the registration to finalize (although typically within an hour).
+
+=== Setup your AWS API Credentials
+You won't need the AWS CLI or SDK installed, however you will need to https://aws.amazon.com/premiumsupport/knowledge-center/create-access-key/[create an Access Key] for your IAM account.
+The key ID and secret key will need to be added to `~/.aws/credentials` in the following format:
+
+ [default]
+ aws_access_key_id = <access_key_id>
+ aws_secret_access_key = <secret_access_key>
+
+While you're at it, go ahead and set a default region to create your cluster in.
+Add the AWS region of your choice (eg: us-east-2) to `~/.aws/config`:
+
+ [default]
+ region=<region>
+
+=== Download the OpenShift Installer 
+The OpenShift 4.0 Dev Preview installer for your platform (assumed to be Fedora/RHEL/CentOS) can be downloaded from GitHub:
+
+https://github.com/openshift/installer/releases
+
+Once you've finished downloading the installer, rename it and make it executable by copying it to $HOME/bin:
+
+ mkdir $HOME/bin
+ mv openshift-install-linux-amd64 $HOME/bin/openshift-install
+ chmod +x $HOME/bin/openshift-install
+
+=== Create the Cluster
+In my experience, it helps to create a subdirectory to house the installer's artifacts:
+
+ mkdir ~/ocp40test
+ cd ~/ocp40test
+
+Now run the installer from the newly created directory:
+
+ openshift-install create cluster
+
+You'll then be prompted to select or provide following info:
+* SSH Public key (if you select None, then you won't be able to connect to your instances over SSH)
+* Platform (aws)
+* Region (detected from `~/.aws/config` if set)
+* Base Domain (detected from Route53)
+* Cluster Name (the name you want your AWS resources to be tagged with)
+* Pull Secret (answer `?` here and follow the link to obtain the user-specific json string)
+
+Once you've gone through all of the required prompts, you should see the install progress:
+
+ INFO Creating cluster...                          
+ INFO Waiting up to 30m0s for the Kubernetes API... 
+ INFO API v1.12.4+f39ab668d3 up                    
+ INFO Waiting up to 30m0s for the bootstrap-complete event... 
+ WARNING RetryWatcher - getting event failed! Re-creating the watcher. Last RV: 3179 
+ INFO Destroying the bootstrap resources...        
+ INFO Waiting up to 30m0s for the cluster to initialize... 
+ INFO Waiting up to 10m0s for the openshift-console route to be created... 
+ INFO Install complete!                            
+
+Note that there is quite a time lapse between each output line shown above.
+To see what is going on behind the scenes, you can tail the installation log in another terminal window:
+
+ cd ~/ocp40test 
+ tail -f .openshift_install.log
+
+Once the installation completes, you'll be provided (in the installer's console output) the URL for logging in via the web console.
+You'll also be provided the password for the `kubeadmin` account.
+What's notably missing, however is the URL for access via the `oc` or `kubectl` commands.
+This URL can be obtained from the install log, or by substituting for your `<clustername>` and `<basedomain>` in the following command:
+
+ oc login -u kubeadmin https://<clustername>-api.<basedomain>:6443
+
+The 4.0 build of the `oc` binary can be accessed by visiting https://cloud.openshift.com/clusters/install and clicking the link at the bottom of the page.
+
+=== Troubleshooting
+If something goes wrong, there is currently no way to roll back an installation (eg: remove resources created in AWS up to the point of failure).
+All resources get created in a new VPC, so it's fairly easy to manually clean up after.
+Just shut down the instances and delete the VPC (the AWS console will inform of any resources blocking the removal).
+In the case of failure, check the https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md[troubleshooting] page on GitHub.
+You can also check the GitHub https://github.com/openshift/installer/issues[issues] section for any known bugs in the installer.
+
+Feedback can be provided by joining this https://groups.google.com/forum/#!forum/openshift-4-dev-preview[Google Group].
+Keep posted for more content from Red Hat Partner Connect.
