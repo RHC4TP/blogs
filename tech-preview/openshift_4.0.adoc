@@ -18,7 +18,7 @@ In this post, we'll go over each of these steps and give some oversight into how
 Assuming that you already have an account setup in AWS (and no domain created yet), sign into the AWS Console and select Route53 from the Services menu.
 Click "Registered Domains" in the side bar and then Register Domain (in blue) near the top of the page.
 
-image::../../assets/Screenshot_2019-02-18_13-39-51.png
+image::../../assets/Screenshot_2019-02-18_13-39-51.png[]
 
 Once you've completed the registration process, it can take up to 3 days for the registration to finalize (although typically within an hour).
 
@@ -95,7 +95,7 @@ The 4.0 build of the `oc` binary can be accessed by visiting https://cloud.opens
 === Troubleshooting
 If something goes wrong, there is currently no way to roll back an installation (eg: remove resources created in AWS up to the point of failure).
 All resources get created in a new VPC, so it's fairly easy to manually clean up after.
-Just shut down the instances and delete the VPC (the AWS console will inform of any resources blocking the removal).
+Just shut down the instances and delete the VPC, and the AWS console will list any resources that are blocking the removal.
 In the case of failure, check the https://github.com/openshift/installer/blob/master/docs/user/troubleshooting.md[troubleshooting] page on GitHub.
 You can also check the GitHub https://github.com/openshift/installer/issues[issues] section for any known bugs in the installer.
 
