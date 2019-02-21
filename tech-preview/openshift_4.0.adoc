@@ -20,6 +20,8 @@ Click "Registered Domains" in the side bar and then Register Domain (in blue) ne
 
 image::../../assets/Screenshot_2019-02-18_13-39-51.png[]
 
+{empty} +
+
 Once you've completed the registration process, it can take up to 3 days for the registration to finalize (although typically within an hour).
 
 === Setup your AWS API Credentials
