@@ -1,0 +1,154 @@
+== Building an Ansible Operator
+Recent versions of the https://github.com/operator-framework/operator-sdk[Operator SDK] support building an operator using Ansible.
+In this post we'll go over a quick "Hello World" example operator using Ansible for the logic in lieu of Go.
+To get started you'll need recent versions of the following components installed:
+
+* Operator SDK (which also requires):
+** go
+** dep
+** git
+** docker
+* OpenShift, okd, or minishift (and `oc` or `kubectl`)
+* cluster-admin permissions assigned to your user
+* quay.io account
+
+With the above listed items squared away, you can begin by creating a new project:
+
+ $ operator-sdk new memcached-operator --api-version=cache.example.com/v1alpha1 --kind=Memcache --type=ansible
+
+Given the above command, you can deduce the GVK (group, version & kind) being used for the operator:
+
+* *group* - `cache.example.com`
+* *version* - `v1alpha1`
+* *kind* - `Memcached`
+
+Change into the newly created `memcached-operator` directory:
+
+ $ cd memcached-operator
+
+This directory contains the base structure on the Ansible operator.
+Most of the generated files here were populated using the GVK info provided when `operator-sdk new` was invoked.
+Below is a short list of what was created:
+
+* *watches.yaml* - This file maps the specified GVK (in turn matching specific CR) to an Ansible role
+* *roles/memcached/* - An Ansible role created using Ansible Galaxy - this role will get called by the reconciliation loop
+* *deploy/* - A directory containing all the required K8s manifests to deploy the operator
+
+Out of the box, all we need to do after running `operator-sdk new --type=ansible` is to define our Custom Resource `spec` field, and write out the logic.
+Both of these tasks can be accomplished in Ansible by editing the `memcached` role.
+
+First, we'll define the `spec` field of the Custom Resource that will be managed by the operator.
+Edit `roles/memcached/defaults/main.yml` so that it contains a single variable:
+
+ size: 1
+
+In the above default variables file for the role, all we did was create a var named `size` with a value of `1`.
+We'll explain more on why this is necessary later on.
+The next task is to define the logic that will be executed by the operator's reconciliation loop.
+The reconciliation loop will run the `memcached` role, which will contain a single task that creates a K8s Deployment for a memcached cluster.
+
+Edit `roles/memcached/tasks/main.yml` so that it contains the following code:
+
+----
+---
+- name: start memcached
+  k8s:
+    definition:
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: '{{ meta.name }}-memcached'
+        namespace: '{{ meta.namespace }}'
+      spec:
+        replicas: "{{size}}"
+        selector:
+          matchLabels:
+            app: memcached
+        template:
+          metadata:
+            labels:
+              app: memcached
+          spec:
+            containers:
+            - name: memcached
+              command:
+              - memcached
+              - -m=64
+              - -o
+              - modern
+              - -v
+              image: "docker.io/memcached:1.4.36-alpine"
+              ports:
+                - containerPort: 11211
+----
+
+Notice in the tasks file that was defined, that the `replicas` field of the deployment was populated (in Ansible's Jinja2 templating syntax) with the value of the `size` variable.
+Any key/value pairs defined in the CR's `spec` field will be passed to our operator, and then to Ansible as `--extra-vars`.
+We've defined a default value for the `size` variable in case a user fails to explicitly define the `size` when creating a `Memcached` Custom Resource.
+
+With all of the essential pieces of the operator defined, you can build the operator image (replace `<username>` below with that of your quay.io account):
+
+ $ operator-sdk build quay.io/<username>/memcached-operator:v0.0.1
+
+The above command should build the operator in the local docker store with the specified tag.
+Next, you'll need to push the image to quay.io so that the OpenShift cluster can retrieve it (don't forget to substitute your `<username>`):
+
+ $ docker push quay,io/<username>/memcached-operator:v0.0.1
+
+Before deploying the operator onto OpenShift, you'll need to edit the deployment first.
+Edit `deploy/operator.yaml` and replace `image: "{{ REPLACE_IMAGE }}"` and `imagePullPolicy: "{{ pull_policy|default('Always') }}"` with the following (once again, substituting for `<username>`):
+
+----
+     containers:
+        - name: memtest
+          # Replace this with the built image name
+          image: "quay.io/<username>/memcached-operator:v0.0.1
+          imagePullPolicy: "{{ pull_policy|default('Always') }}"
+----
+
+Now, you can deploy the operator, starting with the Custom Resource Description for `Memcached`:
+
+ $ oc create -f deploy/cache_v1alpha1_memcached_crd.yaml
+
+Next, create a new project to deploy the dependent resources, and finally the operator:
+
+ $ oc new-project memcached-operator
+ $ oc create -f deploy/service_account.yaml
+ $ oc create -f deploy/role.yaml
+ $ oc create -f deploy/role_binding.yaml
+ $ oc create -f deploy/operator.yaml
+
+A new deployment named `memcached-operator` was created in the current namespace.
+
+You can now verify that the operator pod is running:
+
+ $ oc get pods
+ NAME                                  READY     STATUS    RESTARTS   AGE
+ memcached-operator-7cc7cfdf86-vvjqk   1/1       Running   0          1m
+
+To see the operator in action, create a custom resource of `kind: Memcached`.
+A CR was created for you by the operator-sdk with `size: 3` set in the `spec:` field.
+
+Create the `Memcached` Custom Resource in OpenShift:
+
+ $ oc create -f deploy/cache_v1alpha1_memcached_cr.yaml
+
+You should see 3 memcached pod replicas that were created by the operator:
+
+ $ oc get po
+ NAME                                  READY     STATUS    RESTARTS   AGE
+ example-memcached-6fd7c98d8-7dqdr     1/1       Running   0          1m
+ example-memcached-6fd7c98d8-g5k7v     1/1       Running   0          1m
+ example-memcached-6fd7c98d8-m7vn7     1/1       Running   0          1m
+ memcached-operator-7cc7cfdf86-vvjqk   1/1       Running   0          2m
+
+Well, there you have it, a minimal working operator example written entirely using Ansible.
+As a user exercise, try editing the CR located at `deploy/cache_v1alpha1_memcached_cr.yaml` and changing the `size` field (hint, apply the change using `oc apply -f`).
+Then, watch the operator react to the change.
+
+Once you finish experimenting, clean up the operator resources:
+
+ $ oc delete project memcached-operator
+ $ oc delete -f deploy/crds/cache_v1alpha1_memcached_crd.yaml
+
+Thanks for giving this procedure a try! Stay tuned for more content from Red Hat Partner Connect.
