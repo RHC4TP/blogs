@@ -31,9 +31,11 @@ ose3-master[1:3].test.example.com <2>
 ose3-master[1:3].test.example.com <2>
 
 [nodes]
-ose3-master[1:3].test.example.com <3>
-ose3-infra[1:2].test.example.com openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
-ose3-node[1:2].test.example.com openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+# openshift_node_group_name must be provided for each node
+# See 'Node Group Definition and Mapping' in the project README for more details
+ose3-master[1:3].test.example.com openshift_node_group_name="node-config-master" <3>
+ose3-infra[1:2].test.example.com openshift_node_group_name="node-config-infra"
+ose3-node[1:2].test.example.com openshift_node_group_name="node-config-compute"
 
 [nfs]
 ose3-master1.test.example.com <2>
@@ -71,7 +73,7 @@ openshift_deployment_type=origin
 # use this to lookup the latest exact version of the container images, which is the tag actually used to configure
 # the cluster. For RPM installations we just verify the version detected in your configured repos matches this
 # release.
-openshift_release=v3.9
+openshift_release=v3.11
 
 # default subdomain to use for exposed routes, you should have wildcard dns
 # for *.apps.test.example.com that points at your infra nodes which will run
@@ -167,7 +169,7 @@ openshift_release=v3.11 <8>
 <5> A load balancer is not utilized, so the `[lb]` group was removed, as well as the corresponding entries from `[OSEv3:children]`.
 <6> If you don't use the `root` account for passwordless access over ssh, then set `ansible_user` to the desired username (also requires passwordless sudo permissions).
 <7> To install OpenShift Container Platform (and not OpenShift Origin/OKD), you must comment out `openshift_deployment_type=origin` and uncomment `openshift_deployment_type=openshift-enterprise`.
-<8> We want the latest and greatest version of OpenShift, so `3.11` was defined in lieu of `3.9`.
+<8> We want the latest and greatest version of OpenShift, so we'll stick with version `3.11`
 <9> If you don't have wildcard DNS setup for your cluster, then you can safely comment this out (defaulting to the hostname of the primary master).
 <10> We comment this line out since a load balancer isn't used (once again defaulting to the hostname of the primary master).
 
@@ -184,6 +186,15 @@ Scroll further down into the `[OSEv3:vars]` section and uncomment the following 
 ----
 # htpasswd auth
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
+----
+
+There are two more variables that need to be defined.
+These are for the user account and password used to authenticate to the Red Hat container registries.
+You can create a service account and password for this purpose by following the instructions at https://access.redhat.com/RegistryAuthentication:
+
+----
+oreg_auth_user=<username>
+oreg_auth_password=<password>
 ----
 
 Once you've finished editing the `hosts.example` file, you can copy it into place, optionally backing up the original `/etc/ansible/hosts` file beforehand.
